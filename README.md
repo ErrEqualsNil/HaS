@@ -12,3 +12,5 @@ Codes are organized into two API services:
 Users generate requests to these services for retrieval. Codes can be found in User_Client folder.
 
 After retrieval, please use llm_response/get_llm_resp.py to obtain LLM Response, and use llm_response/evaluate_record.py to evaluate the results.
+
+QA Dataset: https://anonymous.4open.science/r/homologous-QA-dataset-4292/README.md

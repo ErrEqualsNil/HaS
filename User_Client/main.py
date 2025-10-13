@@ -56,7 +56,7 @@ def batch_request(query_file, output_file_name, arguments):
         record["similar_query_info"] = similar_query_info
         record["similar_score"] = similar_score
         records.append(record)
-    write_jsonl(records, os.path.join("/home/pp/noise_in_rag/data/own_dataset/repeat_test_1/run_record", output_file_name))
+    write_jsonl(records, os.path.join("run_record", output_file_name))
 
 
 if __name__ == '__main__':

@@ -83,7 +83,7 @@ if __name__ == '__main__':
     llm = QwenLLM()
     llm_resp_cache_path = "llm_resp_cache.json" # we put historical llm input into this file, Dict{hash_value: llm response}
     record_root = "run_record"  # read all files in the record folder
-    save_root = "/home/pp/noise_in_rag/data/own_dataset/repeat_test_1/record_after_qwen3"  # save file to this folder
+    save_root = "record_after_qwen3"  # save file to this folder
     for file_name in sorted(glob.glob(os.path.join(record_root, "*"))):  # you can use regex to select some record for LLM response
         file_name = os.path.split(file_name)[1]
         try:
