@@ -13,4 +13,4 @@ Users generate requests to these services for retrieval. Codes can be found in U
 
 After retrieval, please use llm_response/get_llm_resp.py to obtain LLM Response, and use llm_response/evaluate_record.py to evaluate the results.
 
-QA Dataset: [https://anonymous.4open.science/r/homologous-QA-dataset-4292/README.md](https://github.com/wingter562/homologous-QA-dataset)
+QA Dataset: [https://github.com/wingter562/homologous-QA-dataset](https://github.com/wingter562/homologous-QA-dataset)
