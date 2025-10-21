@@ -1,6 +1,6 @@
 # HaS
 
-Thanks for your attention to our submitting work "Re-identify to Get It Right: Accelerating RAG through Homology-Aware Speculative Retrieval"
+Thanks for your attention to our submitting work "HaS: Accelerating RAG through Homology-Aware Speculative Retrieval"
 
 The core code is currently available and executable
 
@@ -13,4 +13,4 @@ Users generate requests to these services for retrieval. Codes can be found in U
 
 After retrieval, please use llm_response/get_llm_resp.py to obtain LLM Response, and use llm_response/evaluate_record.py to evaluate the results.
 
-QA Dataset: https://anonymous.4open.science/r/homologous-QA-dataset-4292/README.md
+QA Dataset: [https://anonymous.4open.science/r/homologous-QA-dataset-4292/README.md](https://github.com/wingter562/homologous-QA-dataset)
