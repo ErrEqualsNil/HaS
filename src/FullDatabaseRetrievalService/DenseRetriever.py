@@ -1,11 +1,10 @@
 import os
-from typing import List, Union, Tuple, Dict
+from typing import List, Union
 
 import numpy as np
 
 from utils import index
 from utils.encoder import Encoder
-from utils.load_save_file import load_jsonl_file, write_jsonl
 from utils.logger import logger, log_function_call
 
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
@@ -30,7 +29,7 @@ class DenseRetriever:
         logger.info(f"Indexing Embeddings {embeddings_dir}")
         embeddings = np.load(embeddings_dir, mmap_mode="r")
         while embeddings.shape[0] > 0:
-            print(embeddings.shape[0])
+            logger.info(f"Remaining embeddings to index: {embeddings.shape[0]}")
             end_idx = min(indexing_batch_size, embeddings.shape[0])
             embeddings_to_add = embeddings[:end_idx]
             embeddings = embeddings[end_idx:]
@@ -44,8 +43,9 @@ class DenseRetriever:
             self,
             query: Union[str, List[float]],
             n_docs: int,
-            require_docs: bool = False,
+            require_doc_embeddings: bool = False,
     ):
+        # Accepts either a str-format query or embeddings pre-computed by the Edge.
         if isinstance(query, str):
             query_embedding = self.encoder.encode(query)
         else:
@@ -58,6 +58,6 @@ class DenseRetriever:
 
         docs = [{"id": int(self.ids[indexes[idx]]), "score": float(scores[idx])} for idx in re_rank_order]
 
-        if require_docs:
+        if require_doc_embeddings:
             return docs, doc_embeddings.tolist()
         return docs, None

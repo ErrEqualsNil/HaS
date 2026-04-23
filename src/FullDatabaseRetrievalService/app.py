@@ -1,24 +1,23 @@
 import random
-import numpy as np
+
 from flask import Flask, request, jsonify
 
-from Global_RAG_Service.Retriever import Retriever
+from .Retriever import Retriever
 
 app = Flask(__name__)
 
-use_precomputed_retriever = True
-retriever = Retriever()
-retriever.reset(use_precomputed_retriever)
+retriever = Retriever(
+    "data/enwiki_20231101/corpus_embeddings.npy", 
+    "data/enwiki_20231101/corpus_ids.npy", 
+    "BAAI/bge-base-en-v1.5"
+)
+retriever.reset()
 
 
 def simulate_network_delay(min_delay=0.1, max_delay=0.2):
     delay = random.uniform(min_delay, max_delay)
     return delay
 
-
-def simulate_retrieve_delay(mean=1.23411, std=0.056904):
-    delay = np.random.normal(loc=mean, scale=std)
-    return delay
 
 
 @app.route('/search', methods=["POST"])
@@ -29,14 +28,13 @@ def search():  # put application's code here
     query_embedding = data.get("query_embedding", None)
     query_str = data.get("query_str", None)
     n_docs = data.get("n_docs")
-    require_doc_info = data.get("require_embeddings", False)
+    require_doc_embeddings = data.get("require_doc_embeddings", False)
 
     query = query_embedding if query_embedding is not None else query_str
-    docs, doc_embeddings = retriever.search(query, n_docs, require_doc_info)
-    retrieval_delay = simulate_retrieve_delay() if use_precomputed_retriever else 0
+    docs, doc_embeddings = retriever.search(query, n_docs, require_doc_embeddings)
     return jsonify({
         "docs": docs, "doc_embeddings": doc_embeddings,
-        "simulate_delay": network_delay + retrieval_delay,
+        "simulated_network_latency": network_delay,  # end-to-end delay will be included by the Edge
     })
 
 

@@ -9,11 +9,11 @@ from typing import Dict
 import numpy as np
 import torch
 
-from llm_response.prompts import build_qa_prompt
-from utils.llm import QwenLLM
 from utils.load_save_file import load_jsonl_file, write_jsonl
+from utils.batch_llm import MultiClientOpenAILLM
 
 
+# Fix random seeds for reproducibility.
 random.seed(42)
 np.random.seed(42)
 torch.manual_seed(42)
@@ -24,15 +24,32 @@ if torch.cuda.is_available():
 def stable_hash(s):
     return int(hashlib.md5(s.encode()).hexdigest(), 16)
 
+def build_qa_prompt(query, top_k=10):
+    def build_documents(docs, top_k):
+        return "\n".join(
+            [f"[Document {i + 1}, Title {doc['title']}]\n{doc['text']}" for i, doc in enumerate(docs[:top_k])]
+        )
 
-def get_responses(llm: QwenLLM, data, response_cache_dict: Dict):
+    documents_str = build_documents(query["docs"], top_k)
+
+    prompt = (
+        "You are given several documents and a question.\n"
+        "Respond with a short answer (MAX 5 tokens) based strictly on the documents.\n"
+        "Do NOT add any explanation or reasoning.\n\n"
+        f"{documents_str}\n\n"
+        f"Question: {query['question']}\n"
+    )
+
+    return prompt
+
+
+def get_responses(llm: MultiClientOpenAILLM, data, response_cache_dict: Dict):
     data = sorted(data, key=lambda d: d["id"])
     data_match, data_wo_match = [], []
 
     for d in data:
         d["prompt"] = build_qa_prompt(d)
         d["hash_value"] = str(stable_hash(d["prompt"]))
-        # we use hash value to find historical response for reuse, thus saving LLM inference time
         if d["hash_value"] in response_cache_dict.keys():
             d["resp"] = response_cache_dict[d["hash_value"]]
             data_match.append(d)
@@ -41,9 +58,9 @@ def get_responses(llm: QwenLLM, data, response_cache_dict: Dict):
 
     if len(data_wo_match) != 0:
         prompts = [d["prompt"] for d in data_wo_match]
-        responses = llm.generate(prompts)
+        responses, _ = llm.generate(prompts)
         for resp, d in zip(responses, data_wo_match):
-            d[f"resp"] = resp
+            d["resp"] = resp
             response_cache_dict[d["hash_value"]] = resp
 
     data = sorted(data_match + data_wo_match, key=lambda d: d["id"])
@@ -64,6 +81,7 @@ def read_jsonl_by_line_ids(data_path, line_offsets, line_ids):
 
 
 def normalize_answer_list(strings: list[str]) -> list[str]:
+    # Deduplicate, lowercase, and sort by length ascending (shorter answers take precedence).
     strings = [string.lower() for string in strings]
     strings = sorted(set(strings), key=len)
     result = []
@@ -77,14 +95,20 @@ def normalize_answer_list(strings: list[str]) -> list[str]:
 
 
 if __name__ == '__main__':
-    corpus_path = "enwiki_20231101/corpus.jsonl"  # path to the full corpus
-    line_offset_path = "corpus_line_offset.pkl"  # help to fast search the document from the jsonl corpus file
+    api = ""  # API for OpenAI Service
+    url = ""  # URL for OpenAI Service
+    llm_name = "Qwen/Qwen3-8B"
 
-    llm = QwenLLM()
-    llm_resp_cache_path = "llm_resp_cache.json" # we put historical llm input into this file, Dict{hash_value: llm response}
-    record_root = "run_record"  # read all files in the record folder
-    save_root = "record_after_qwen3"  # save file to this folder
-    for file_name in sorted(glob.glob(os.path.join(record_root, "*"))):  # you can use regex to select some record for LLM response
+    corpus_path = "data/enwiki_20231101/corpus.jsonl"
+    line_offset_path = "data/enwiki_20231101/corpus_line_offset.pkl"
+    
+    llm = MultiClientOpenAILLM([api], url, llm_name, max_workers=1)
+
+    llm_resp_cache_path = "data/llm_resp_cache/qwen_cache.json"
+    record_root = "data/llm_resp_cache/run_record"
+    save_root = "data/llm_resp_cache/record_after_qwen"
+    
+    for file_name in sorted(glob.glob(os.path.join(record_root, "*"))):
         file_name = os.path.split(file_name)[1]
         try:
             with open(llm_resp_cache_path, "r", encoding="utf-8") as f:
@@ -95,7 +119,6 @@ if __name__ == '__main__':
         with open(line_offset_path, 'rb') as f:
             line_offsets = pickle.load(f)
 
-        # find documents from the corpus by document id
         if not os.path.exists(os.path.join(save_root, file_name)):
             data = load_jsonl_file(os.path.join(record_root, file_name))
             doc_ids = []
@@ -108,10 +131,9 @@ if __name__ == '__main__':
                 d["id"] = idx
                 idx += 1
                 d["docs"] = [doc_id_to_doc[doc_id] for doc_id in d["doc_ids"]]
-                d["answer_list"] = normalize_answer_list(d["answer_list"])
+                d["answer_list"] = normalize_answer_list(d["answers"])
             write_jsonl(data, os.path.join(save_root, file_name))
 
-        # get llm response
         data = load_jsonl_file(os.path.join(save_root, file_name))
         data, response_cache_dict = get_responses(llm, data, response_cache_dict)
         write_jsonl(data, os.path.join(save_root, file_name))

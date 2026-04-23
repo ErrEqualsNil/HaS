@@ -1,24 +1,19 @@
+import glob
 import os.path
-import random
+
+import pandas as pd
 
 from utils import evaluate
 from utils.load_save_file import load_jsonl_file
-import glob
-import re
-import pandas as pd
 
 
 if __name__ == '__main__':
     results = []
 
-    # select files to be evaluated
-    pattern = re.compile(r"record_after_qwen/.*")
-    all_files = glob.glob("record_after_qwen/*")
-    matched_files = [f for f in all_files if pattern.fullmatch(f)]
+    all_files = glob.glob("data/popqa_augmented/record_after_qwen/*")
 
-    for file_name in sorted(matched_files):
+    for file_name in sorted(all_files):
         data = load_jsonl_file(file_name)
-        data = random.sample(data, int(0.95 * len(data)))
 
         result = {
             "name": os.path.split(file_name)[1],
@@ -30,5 +25,6 @@ if __name__ == '__main__':
             "response_hit_rate_for_cache_hit_record": evaluate.response_hit_rate(data, only_cache_hit=True),
         }
         results.append(result)
+        print(result)
     results = pd.DataFrame(results)
-    results.to_csv("record_after_qwen/results.csv")
+    results.to_csv("data/popqa_augmented/record_after_qwen/results.csv")

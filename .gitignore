@@ -1,0 +1,44 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Environments
+.venv/
+venv/
+env/
+.env
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs / runtime artifacts
+*.log
+logs/
+
+# Data / caches / model artifacts
+data/
+datasets/
+checkpoints/
+*.pt
+*.bin
+*.safetensors
+*.faiss
+*.hnsw
+*.jsonl
+!data/README.md
+
+# Jupyter
+.ipynb_checkpoints/

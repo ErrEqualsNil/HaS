@@ -1,0 +1,21 @@
+# Core
+numpy>=1.24
+requests>=2.31
+tqdm>=4.65
+regex>=2023.0
+pandas>=2.0
+psutil>=5.9
+
+# Web service
+flask>=3.0
+
+# Deep learning / encoders
+torch>=2.1
+sentence-transformers>=2.7
+
+# ANN indexes
+faiss-cpu>=1.7.4        # or faiss-gpu if CUDA is available
+hnswlib>=0.7.0
+
+# LLM inference over an OpenAI-compatible endpoint (evaluation stage only)
+openai>=1.30
